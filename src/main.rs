@@ -43,7 +43,7 @@ extern crate libc;
 
 use libc::c_ulong;
 use std::{mem, io};
-use std::os::unix::io::RawFd;
+use std::os::unix::io::{AsRawFd, RawFd};
 
 // constants stolen from C libs
 const TIOCSRS485: c_ulong = 0x542f;
@@ -179,6 +179,38 @@ impl SerialRs485 {
     }
 }
 
-pub trait Rs485 {}
+
+/// Rs485 controls
+///
+/// A convenient trait for controlling Rs485 parameters.
+pub trait Rs485 {
+    /// Retrieves RS485 parameters from target
+    fn get_rs485_conf(&self) -> io::Result<SerialRs485>;
+    /// Sets RS485 parameters on target
+    fn set_rs485_conf(&self, conf: &SerialRs485) -> io::Result<()>;
+    /// Update RS485 configuration
+    ///
+    /// Combines `get_rs485_conf` and `set_rs485_conf` through a closure
+    fn update_rs485_conf<F: FnOnce(&mut SerialRs485) -> ()>(&self, f: F) -> io::Result<()>;
+}
+
+impl<T: AsRawFd> Rs485 for T {
+    #[inline]
+    fn get_rs485_conf(&self) -> io::Result<SerialRs485> {
+        SerialRs485::from_fd(self.as_raw_fd())
+    }
+
+    #[inline]
+    fn set_rs485_conf(&self, conf: &SerialRs485) -> io::Result<()> {
+        conf.set_on_fd(self.as_raw_fd())
+    }
+
+    #[inline]
+    fn update_rs485_conf<F: FnOnce(&mut SerialRs485) -> ()>(&self, f: F) -> io::Result<()> {
+        let mut conf = self.get_rs485_conf()?;
+        f(&mut conf);
+        self.set_rs485_conf(&conf)
+    }
+}
 
 fn main() {}
