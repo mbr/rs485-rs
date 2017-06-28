@@ -45,11 +45,11 @@ use libc::c_ulong;
 use std::{mem, io};
 use std::os::unix::io::RawFd;
 
-
+// constants stolen from C libs
 const TIOCSRS485: c_ulong = 0x542f;
 const TIOCGRS485: c_ulong = 0x542e;
 
-
+// bitflags used by rs485 functionality
 bitflags! {
     struct Rs485Flags: u32 {
         const SER_RS485_ENABLED        = (1 << 0);
@@ -61,6 +61,10 @@ bitflags! {
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
+/// RS485 serial configuration
+///
+/// Internally, this structure is the same as a [`struct serial_rs485`]
+///(http://elixir.free-electrons.com/linux/latest/ident/serial_rs485).
 pub struct SerialRs485 {
     flags: Rs485Flags,
     delay_rts_before_send: u32,
@@ -97,7 +101,7 @@ impl SerialRs485 {
 
     /// Enable RS485 support
     ///
-    ///
+    /// Unless enabled, none of the settings set take effect.
     #[inline]
     pub fn set_enabled<'a>(&'a mut self, enabled: bool) -> &'a mut Self {
         if enabled {
@@ -109,6 +113,10 @@ impl SerialRs485 {
         self
     }
 
+    /// Set RTS high or low before sending
+    ///
+    /// RTS will be set before sending, this setting controls whether
+    /// it will be set high (`true`) or low (`false`).
     #[inline]
     pub fn set_rts_on_send<'a>(&'a mut self, rts_on_send: bool) -> &'a mut Self {
         if rts_on_send {
@@ -120,6 +128,10 @@ impl SerialRs485 {
         self
     }
 
+    /// Set RTS high or low after sending
+    ///
+    /// RTS will be set after sending, this setting contrls whether
+    /// it will be set high (`true`) or low (`false`).
     #[inline]
     pub fn set_rts_after_send<'a>(&'a mut self, rts_after_send: bool) -> &'a mut Self {
         if rts_after_send {
@@ -131,18 +143,30 @@ impl SerialRs485 {
         self
     }
 
+    /// Delay before sending in ms
+    ///
+    /// If set to non-zero, transmission will not start until
+    /// `delays_rts_before_send` milliseconds after RTS has been set
     #[inline]
     pub fn delay_rts_before_send_ms<'a>(&'a mut self, delay_rts_before_send: u32) -> &'a mut Self {
         self.delay_rts_before_send = delay_rts_before_send;
         self
     }
 
+    /// Hold RTS after sending, in ms
+    ///
+    /// If set to non-zero, RTS will be kept high/low for
+    /// `delays_rts_after_send` ms after the transmission is complete
     #[inline]
     pub fn delay_rts_after_send_ms<'a>(&'a mut self, delay_rts_after_send: u32) -> &'a mut Self {
         self.delay_rts_after_send = delay_rts_after_send;
         self
     }
 
+    /// Apply settings to file descriptor
+    ///
+    /// Applies the constructed configuration a raw filedescriptor using
+    /// `ioctl`.
     #[inline]
     pub fn set_on_fd(&self, fd: RawFd) -> io::Result<()> {
         let rval = unsafe { libc::ioctl(fd, TIOCSRS485, self as *const SerialRs485) };
