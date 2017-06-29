@@ -186,8 +186,10 @@ impl SerialRs485 {
 pub trait Rs485 {
     /// Retrieves RS485 parameters from target
     fn get_rs485_conf(&self) -> io::Result<SerialRs485>;
+
     /// Sets RS485 parameters on target
     fn set_rs485_conf(&self, conf: &SerialRs485) -> io::Result<()>;
+
     /// Update RS485 configuration
     ///
     /// Combines `get_rs485_conf` and `set_rs485_conf` through a closure
