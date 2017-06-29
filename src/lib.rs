@@ -51,7 +51,7 @@ const TIOCGRS485: c_ulong = 0x542e;
 
 // bitflags used by rs485 functionality
 bitflags! {
-    struct Rs485Flags: u32 {
+    pub struct Rs485Flags: u32 {
         const SER_RS485_ENABLED        = (1 << 0);
         const SER_RS485_RTS_ON_SEND    = (1 << 1);
         const SER_RS485_RTS_AFTER_SEND = (1 << 2);
@@ -214,5 +214,3 @@ impl<T: AsRawFd> Rs485 for T {
         self.set_rs485_conf(&conf)
     }
 }
-
-fn main() {}
