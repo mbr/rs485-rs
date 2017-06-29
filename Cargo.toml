@@ -2,6 +2,10 @@
 authors = ["Marc Brinkmann <git@marcbrinkmann.de>"]
 name = "rs485"
 version = "0.1.0"
+description = "RS485 serial support (Linux)"
+license = "MIT"
+repository = "https://github.com/mbr/rs485-rs"
+documentation = "https://docs.rs/rs485"
 
 [dependencies]
 bitflags = "0.9.1"
