@@ -163,6 +163,16 @@ impl SerialRs485 {
         self
     }
 
+    /// Allow receiving whilst transmitting
+    pub fn set_rx_during_tx<'a>(&'a mut self, set_rx_during_tx: bool) -> &'a mut Self {
+        if set_rx_during_tx {
+            self.flags |= SER_RS485_RX_DURING_TX
+        } else {
+            self.flags &= !SER_RS485_RX_DURING_TX;
+        }
+        self
+    }
+
     /// Apply settings to file descriptor
     ///
     /// Applies the constructed configuration a raw filedescriptor using
