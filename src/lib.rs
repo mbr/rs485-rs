@@ -37,10 +37,6 @@
 //! is actually connected to the transceiver, properly pinmuxed (if necessary)
 //! and that the UART itself is enabled.
 
-#[macro_use]
-extern crate bitflags;
-extern crate libc;
-
 use libc::c_ulong;
 use std::{mem, io};
 use std::os::unix::io::{AsRawFd, RawFd};
@@ -49,14 +45,16 @@ use std::os::unix::io::{AsRawFd, RawFd};
 const TIOCSRS485: c_ulong = 0x542f;
 const TIOCGRS485: c_ulong = 0x542e;
 
-// bitflags used by rs485 functionality
-bitflags! {
-    pub struct Rs485Flags: u32 {
-        const SER_RS485_ENABLED        = (1 << 0);
-        const SER_RS485_RTS_ON_SEND    = (1 << 1);
-        const SER_RS485_RTS_AFTER_SEND = (1 << 2);
-        const SER_RS485_RX_DURING_TX   = (1 << 4);
-    }
+#[derive(Copy, Clone, Debug)]
+pub struct Rs485Flags {
+    bits: u32,
+}
+
+impl Rs485Flags {
+    pub const SER_RS485_ENABLED: Self = Rs485Flags { bits: (1 << 0) };
+    pub const SER_RS485_RTS_ON_SEND: Self = Rs485Flags { bits: (1 << 1) };
+    pub const SER_RS485_RTS_AFTER_SEND: Self = Rs485Flags { bits: (1 << 2) };
+    pub const SER_RS485_RX_DURING_TX: Self = Rs485Flags { bits: (1 << 4) };
 }
 
 #[repr(C)]
@@ -81,6 +79,16 @@ impl SerialRs485 {
         unsafe { mem::zeroed() }
     }
 
+    #[inline]
+    pub fn default() -> SerialRs485 {
+        SerialRs485{
+            flags : Rs485Flags::SER_RS485_ENABLED,
+            delay_rts_before_send : 0,
+            delay_rts_after_send : 0,
+            _padding : [0u32; 5]
+        }
+    }
+
     /// Load settings from file descriptor
     ///
     /// Settings will be loaded from the file descriptor, which must be a
@@ -96,7 +104,6 @@ impl SerialRs485 {
         }
 
         Ok(conf)
-
     }
 
     /// Enable RS485 support
@@ -105,9 +112,9 @@ impl SerialRs485 {
     #[inline]
     pub fn set_enabled<'a>(&'a mut self, enabled: bool) -> &'a mut Self {
         if enabled {
-            self.flags |= SER_RS485_ENABLED;
+            self.flags.bits |= Rs485Flags::SER_RS485_ENABLED.bits;
         } else {
-            self.flags &= !SER_RS485_ENABLED;
+            self.flags.bits &= !Rs485Flags::SER_RS485_ENABLED.bits;
         }
 
         self
@@ -120,9 +127,9 @@ impl SerialRs485 {
     #[inline]
     pub fn set_rts_on_send<'a>(&'a mut self, rts_on_send: bool) -> &'a mut Self {
         if rts_on_send {
-            self.flags |= SER_RS485_RTS_ON_SEND;
+            self.flags.bits |= Rs485Flags::SER_RS485_RTS_ON_SEND.bits;
         } else {
-            self.flags &= !SER_RS485_RTS_ON_SEND;
+            self.flags.bits &= !Rs485Flags::SER_RS485_RTS_ON_SEND.bits;
         }
 
         self
@@ -135,9 +142,9 @@ impl SerialRs485 {
     #[inline]
     pub fn set_rts_after_send<'a>(&'a mut self, rts_after_send: bool) -> &'a mut Self {
         if rts_after_send {
-            self.flags |= SER_RS485_RTS_AFTER_SEND;
+            self.flags.bits |= Rs485Flags::SER_RS485_RTS_AFTER_SEND.bits;
         } else {
-            self.flags &= !SER_RS485_RTS_AFTER_SEND;
+            self.flags.bits &= !Rs485Flags::SER_RS485_RTS_AFTER_SEND.bits;
         }
 
         self
@@ -170,9 +177,9 @@ impl SerialRs485 {
     /// even when using half-duplex.
     pub fn set_rx_during_tx<'a>(&'a mut self, set_rx_during_tx: bool) -> &'a mut Self {
         if set_rx_during_tx {
-            self.flags |= SER_RS485_RX_DURING_TX
+            self.flags.bits |= Rs485Flags::SER_RS485_RX_DURING_TX.bits;
         } else {
-            self.flags &= !SER_RS485_RX_DURING_TX;
+            self.flags.bits &= !Rs485Flags::SER_RS485_RX_DURING_TX.bits;
         }
         self
     }
