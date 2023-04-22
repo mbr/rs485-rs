@@ -41,13 +41,8 @@
 extern crate bitflags;
 extern crate libc;
 
-use libc::c_ulong;
 use std::{mem, io};
 use std::os::unix::io::{AsRawFd, RawFd};
-
-// constants stolen from C libs
-const TIOCSRS485: c_ulong = 0x542f;
-const TIOCGRS485: c_ulong = 0x542e;
 
 // bitflags used by rs485 functionality
 bitflags! {
@@ -89,7 +84,7 @@ impl SerialRs485 {
     pub fn from_fd(fd: RawFd) -> io::Result<SerialRs485> {
         let mut conf = SerialRs485::new();
 
-        let rval = unsafe { libc::ioctl(fd, TIOCGRS485, &mut conf as *mut SerialRs485) };
+        let rval = unsafe { libc::ioctl(fd, libc::TIOCGRS485, &mut conf as *mut SerialRs485) };
 
         if rval == -1 {
             return Err(io::Error::last_os_error());
@@ -105,9 +100,9 @@ impl SerialRs485 {
     #[inline]
     pub fn set_enabled<'a>(&'a mut self, enabled: bool) -> &'a mut Self {
         if enabled {
-            self.flags |= SER_RS485_ENABLED;
+            self.flags |= Rs485Flags::SER_RS485_ENABLED;
         } else {
-            self.flags &= !SER_RS485_ENABLED;
+            self.flags &= !Rs485Flags::SER_RS485_ENABLED;
         }
 
         self
@@ -120,9 +115,9 @@ impl SerialRs485 {
     #[inline]
     pub fn set_rts_on_send<'a>(&'a mut self, rts_on_send: bool) -> &'a mut Self {
         if rts_on_send {
-            self.flags |= SER_RS485_RTS_ON_SEND;
+            self.flags |= Rs485Flags::SER_RS485_RTS_ON_SEND;
         } else {
-            self.flags &= !SER_RS485_RTS_ON_SEND;
+            self.flags &= !Rs485Flags::SER_RS485_RTS_ON_SEND;
         }
 
         self
@@ -135,9 +130,9 @@ impl SerialRs485 {
     #[inline]
     pub fn set_rts_after_send<'a>(&'a mut self, rts_after_send: bool) -> &'a mut Self {
         if rts_after_send {
-            self.flags |= SER_RS485_RTS_AFTER_SEND;
+            self.flags |= Rs485Flags::SER_RS485_RTS_AFTER_SEND;
         } else {
-            self.flags &= !SER_RS485_RTS_AFTER_SEND;
+            self.flags &= !Rs485Flags::SER_RS485_RTS_AFTER_SEND;
         }
 
         self
@@ -170,9 +165,9 @@ impl SerialRs485 {
     /// even when using half-duplex.
     pub fn set_rx_during_tx<'a>(&'a mut self, set_rx_during_tx: bool) -> &'a mut Self {
         if set_rx_during_tx {
-            self.flags |= SER_RS485_RX_DURING_TX
+            self.flags |= Rs485Flags::SER_RS485_RX_DURING_TX
         } else {
-            self.flags &= !SER_RS485_RX_DURING_TX;
+            self.flags &= !Rs485Flags::SER_RS485_RX_DURING_TX;
         }
         self
     }
@@ -183,7 +178,7 @@ impl SerialRs485 {
     /// `ioctl`.
     #[inline]
     pub fn set_on_fd(&self, fd: RawFd) -> io::Result<()> {
-        let rval = unsafe { libc::ioctl(fd, TIOCSRS485, self as *const SerialRs485) };
+        let rval = unsafe { libc::ioctl(fd, libc::TIOCSRS485, self as *const SerialRs485) };
 
         if rval == -1 {
             return Err(io::Error::last_os_error());
